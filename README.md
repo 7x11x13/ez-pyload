@@ -1,6 +1,9 @@
 # ez-pyload
 
-Wrapper for [pyLoad](https://github.com/pyload/pyload) so it can be used in your Python projects without too much overhead (it won't start a webserver like pyLoad normally does).
+Wrapper for [pyLoad](https://github.com/pyload/pyload) so it can be used in your Python projects without starting a webserver like pyLoad normally does.
+
+## Why?
+I've been trying to find a library or CLI app which is able to download from many different filehosting sites for a long while now. The only free downloaders I have been able to find with support for many filehosting sites are jDownloader2 and pyLoad, neither of which seem to have a CLI interface or developer friendly API/documentation, and both of which seem to run a webserver just to be able to download some files. This library (hopefully) fixes this problem.
 
 ## Installation
 
