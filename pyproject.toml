@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ez-pyload"
+version = "1.0.0"
+description = "Wrapper for pyLoad to allow downloading files through Python (no webserver). Includes CLI"
+authors = ["7x11x13 <x7x11x13@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+pyload-ng = "^0.5.0b3.dev81"
+
+[tool.poetry.scripts]
+pydl = "ez_pyload.__main__:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
