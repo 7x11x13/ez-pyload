@@ -1,17 +1,16 @@
-import glob
 import logging
 import os
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 
 cwd = os.getcwd() # pyload messes with cwd
+
 from pyload.core import Core
-from pyload.core.log_factory import LogFactory
-from pyload.core.datatypes.enums import Destination
 from pyload.core.datatypes.pyfile import PyFile
-from pyload.core.datatypes.pypackage import PyPackage
+from pyload.core.log_factory import LogFactory
 from pyload.core.threads.download_thread import DownloadThread
+
 os.chdir(cwd)
 
 logger = logging.getLogger("pyload")
@@ -27,12 +26,13 @@ LogFactory.get_logger = new_get_logger
 
 import tempfile
 
+
 def _download(pyload: Core, url: str, pkg_name: str = "unknown", pkg_dir: str = "unknown") -> bool:
     urls = [url]
     data = pyload.plugin_manager.parse_urls(urls)
     url, plugin = data[0]
-    PyPackage(pyload.file_manager, 0, pkg_name, pkg_dir, None, None, Destination.QUEUE, None)
-    pyfile = PyFile(pyload.files, -1, url, url, 0, 0, "", plugin, 0, -1)
+    pkg_id = pyload.files.add_package(pkg_name, pkg_dir)
+    pyfile = PyFile(pyload.files, -1, url, url, 0, 0, "", plugin, pkg_id, -1)
     pyfile.init_plugin()
     if pyfile.plugin.__type__ == "downloader":
         thread = DownloadThread(pyload.thread_manager)
@@ -52,7 +52,9 @@ def _download(pyload: Core, url: str, pkg_name: str = "unknown", pkg_dir: str = 
         pyfile.plugin.process(pyfile)
         for folder, urls, name in pyfile.plugin.packages:
             for url in urls:
-                _download(pyload, url, name, pkg_dir + "/" + folder)
+                _download(
+                    pyload, url, name, pkg_dir + os.sep + folder
+                )  # pyload uses os.sep instead of / so this is necessary
         return True
 
 def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -> Path:
@@ -70,7 +72,8 @@ def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -
     download_dir = Path(download_dir)
     debug = loglevel == logging.DEBUG
     logger.setLevel(loglevel)
-    with tempfile.TemporaryDirectory(".ez-pyload") as tmp:
+    tmp = "."
+    with tempfile.TemporaryDirectory(".ez-pyload", ignore_cleanup_errors=True) as tmp:
         pyload = Core(tmp, "tmpdir", "storage", debug)
         is_dir = _download(pyload, url)
         src_path = next((Path(tmp) / "data" / "storage" / "unknown").glob("*"))
@@ -82,5 +85,6 @@ def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -
             shutil.copytree(src_path, dst_path)
         else:
             shutil.copy(src_path, dst_path)
-        pyload.terminate()
+        pyload.stop()
+        pyload.db.shutdown()
         return dst_path
