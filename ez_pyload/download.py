@@ -63,20 +63,23 @@ def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -
     logger.setLevel(loglevel)
     tmp = "."
     with tempfile.TemporaryDirectory(".ez-pyload") as tmp:
-        pyload = Core(tmp, "tmpdir", "storage", debug)
-        is_dir = _download(pyload, url)
-        src_path = next((Path(tmp) / "data" / "storage" / "unknown").glob("*"))
-        name = src_path.name
-        dst_path = download_dir / name
-        # pyload messes with cwd again
-        os.chdir(cwd)
-        if is_dir:
-            shutil.copytree(src_path, dst_path)
-        else:
-            shutil.copy(src_path, dst_path)
-        # don't care about corrupting data,
-        # just need to release connections NOW
-        # so we can clean up tempdir
-        pyload.db.c.close()
-        pyload.db.conn.close()
-        return dst_path
+        try:
+            pyload = Core(tmp, "tmpdir", "storage", debug)
+            is_dir = _download(pyload, url)
+            src_path = next((Path(tmp) / "data" / "storage" / "unknown").glob("*"))
+            name = src_path.name
+            dst_path = download_dir / name
+            # pyload messes with cwd again
+            os.chdir(cwd)
+            if is_dir:
+                shutil.copytree(src_path, dst_path)
+            else:
+                shutil.copy(src_path, dst_path)
+            return dst_path
+        finally:
+            # don't care about corrupting data,
+            # just need to release connections NOW
+            # so we can clean up tempdir
+            pyload.db.c.close()
+            pyload.db.conn.close()
+            os.chdir(cwd)
