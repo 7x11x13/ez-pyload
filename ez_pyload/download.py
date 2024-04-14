@@ -1,28 +1,17 @@
 import logging
 import os
 import shutil
-import sys
 from pathlib import Path
 
 cwd = os.getcwd() # pyload messes with cwd
 
 from pyload.core import Core
 from pyload.core.datatypes.pyfile import PyFile
-from pyload.core.log_factory import LogFactory
 from pyload.core.threads.download_thread import DownloadThread
 
-os.chdir(cwd)
+from .patches import logger
 
-logger = logging.getLogger("pyload")
-consoleform = logging.Formatter(
-    LogFactory.LINEFORMAT, LogFactory.DATEFORMAT, LogFactory.LINESTYLE
-)
-consolehdlr = logging.StreamHandler(sys.stdout)
-consolehdlr.setFormatter(consoleform)
-logger.addHandler(consolehdlr)
-def new_get_logger(self, name: str):
-    return logger
-LogFactory.get_logger = new_get_logger
+os.chdir(cwd)
 
 import tempfile
 
@@ -73,7 +62,7 @@ def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -
     debug = loglevel == logging.DEBUG
     logger.setLevel(loglevel)
     tmp = "."
-    with tempfile.TemporaryDirectory(".ez-pyload", ignore_cleanup_errors=True) as tmp:
+    with tempfile.TemporaryDirectory(".ez-pyload") as tmp:
         pyload = Core(tmp, "tmpdir", "storage", debug)
         is_dir = _download(pyload, url)
         src_path = next((Path(tmp) / "data" / "storage" / "unknown").glob("*"))
@@ -85,6 +74,9 @@ def download(url: str, download_dir: str | Path, loglevel: int = logging.INFO) -
             shutil.copytree(src_path, dst_path)
         else:
             shutil.copy(src_path, dst_path)
-        pyload.stop()
-        pyload.db.shutdown()
+        # don't care about corrupting data,
+        # just need to release connections NOW
+        # so we can clean up tempdir
+        pyload.db.c.close()
+        pyload.db.conn.close()
         return dst_path
