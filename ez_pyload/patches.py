@@ -3,6 +3,7 @@ import os
 import sqlite3
 import sys
 
+from pyload.core import Core
 from pyload.core.log_factory import LogFactory
 from pyload.core.threads.database_thread import DatabaseThread
 
@@ -48,3 +49,5 @@ def new_db_thread_run(self):
 
 
 DatabaseThread.run = new_db_thread_run
+
+Core._init_webserver = lambda self: None

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ez-pyload"
-version = "1.0.3"
+version = "1.0.4"
 description = "Wrapper for pyLoad to allow downloading files through Python (no webserver). Includes CLI"
 authors = ["7x11x13 <x7x11x13@gmail.com>"]
 license = "MIT"
